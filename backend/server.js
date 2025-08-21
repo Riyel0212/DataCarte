@@ -7,10 +7,10 @@ require('dotenv').config();
 const app = express();
 
 // For production, restrict CORS origins
-const corsOptions = {
-  origin: '*path',
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: '*path',
+// };
+// app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -22,14 +22,23 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1); // Exit app if DB connection fails
   });
 
-  
-app.use((req, res, next) => {
-  res.setHeader(
-  'Content-Security-Policy',
-  "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'"
-  ); 
-  next();
-});
+// const headersObj = {
+//   'ngrok-skip-browser-warning': true,
+//   'Content-Type': 'application/json',
+// };
+
+// app.use((req, res, next) => {
+//   res.set(headersObj);
+//   next();
+// });
+
+// app.use((req, res, next) => {
+//   res.setHeader(
+//   'Content-Security-Policy',
+//   "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'"
+//   ); 
+//   next();
+// });
 
 // Routes
 app.use(express.static(path.join(__dirname, '../frontend/dist')));

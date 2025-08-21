@@ -6,8 +6,10 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
+  // Extract both `auth` and `setAuth` in case you want to log auth state or use it
   const { setAuth } = useContext(AuthContext);
 
+  // State for form inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -17,9 +19,13 @@ const Login = () => {
     password: '',
   });
 
+  // State for general error messages (string only)
+  const [generalError, setGeneralError] = useState('');
+
+  // Loading state while submitting
   const [loading, setLoading] = useState(false);
 
-  // Email validation helper
+  // Email validation helper using regex
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -36,39 +42,59 @@ const Login = () => {
       newErrors.password = 'Password is required';
     }
     setErrors(newErrors);
+    // Return true if no errors exist
     return Object.keys(newErrors).length === 0;
   };
 
   // Clear specific errors when user starts typing
   const handleEmailChange = (val) => {
     setEmail(val);
-    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+    if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
+    // Clear general error too when user changes input
+    if (generalError) setGeneralError('');
   };
 
   const handlePasswordChange = (val) => {
     setPassword(val);
-    if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
+    if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
+    if (generalError) setGeneralError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Submit handler
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    // Validate first
+    // Validate inputs first
     if (!validate()) {
       return;
     }
 
     setLoading(true);
     try {
+      const headersObj = {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json',
+      };
+
+      // Your API endpoint here
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/login`,
-        { email, password }
+        '/api/login',
+        { email, password },
+        { headers: headersObj }
       );
+
+      // Defensive check for response data
+      if (!res.data || !res.data.token || !res.data.user) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Update auth context with token and user info
       setAuth({
         token: res.data.token,
         user: res.data.user,
       });
-      console.log('Auth: ', auth);
+
+      // Inform user of success
       toaster.create({
         title: 'Login successful',
         status: 'success',
@@ -76,6 +102,11 @@ const Login = () => {
         isClosable: true,
       });
     } catch (err) {
+      console.error(err);
+      // Set a string message for rendering error safely
+      setGeneralError(err.response?.data?.message || err.message || 'Login failed');
+
+      // Also show the error in toaster
       toaster.create({
         title: 'Login failed',
         description: err.response?.data?.message || 'Invalid credentials',
@@ -89,14 +120,25 @@ const Login = () => {
   };
 
   return (
-    <Box maxW="md" mx="auto" mt={10} p={6} boxShadow="md" borderRadius="md" bg="white">
+    <Box maxW="md" mx="auto" mt={10} p={6} boxShadow="md" borderRadius="md" bg="black">
+      {/* Render general error message safely */}
+      {generalError && (
+        <Text color="red.500" mb={4} fontWeight="semibold" textAlign="center">
+          {generalError}
+        </Text>
+      )}
+
       <Toaster />
-      <Heading mb={6} color="blue.700" textAlign="center">Login</Heading>
+      <Heading mb={6} color="blue.700" textAlign="center">
+        Login
+      </Heading>
       <form onSubmit={handleSubmit} noValidate>
         <VStack spacing={4} align="flex-start">
-
+          {/* Email input */}
           <Box w="100%">
-            <Text htmlFor="email" fontWeight="semibold" mb={1} as="label">Email</Text>
+            <Text htmlFor="email" fontWeight="semibold" mb={1} as="label">
+              Email
+            </Text>
             <Input
               id="email"
               type="email"
@@ -106,12 +148,17 @@ const Login = () => {
               borderColor={errors.email ? 'red.500' : undefined}
             />
             {errors.email && (
-              <Text color="red.500" fontSize="sm" mt={1}>{errors.email}</Text>
+              <Text color="red.500" fontSize="sm" mt={1}>
+                {errors.email}
+              </Text>
             )}
           </Box>
 
+          {/* Password input */}
           <Box w="100%">
-            <Text htmlFor="password" fontWeight="semibold" mb={1} as="label">Password</Text>
+            <Text htmlFor="password" fontWeight="semibold" mb={1} as="label">
+              Password
+            </Text>
             <Input
               id="password"
               type="password"
@@ -121,7 +168,9 @@ const Login = () => {
               borderColor={errors.password ? 'red.500' : undefined}
             />
             {errors.password && (
-              <Text color="red.500" fontSize="sm" mt={1}>{errors.password}</Text>
+              <Text color="red.500" fontSize="sm" mt={1}>
+                {errors.password}
+              </Text>
             )}
           </Box>
 
@@ -130,6 +179,7 @@ const Login = () => {
           </Button>
         </VStack>
       </form>
+
       <Text mt={4} fontSize="sm" color="gray.600" textAlign="center">
         Forgot password? Contact admin.
       </Text>
@@ -137,13 +187,13 @@ const Login = () => {
         Don't have an account yet? Then SYBAU.
       </Text>
       <Text fontSize="sm" color="gray.600" textAlign="center" mb={2}>
-        jk, register here. 
-        <Link 
-          as={RouterLink} 
-          fontWeight="semibold" 
-          textDecoration="underline" 
-          _hover={{ textDecoration:'none', color: 'teal.700' }} 
-          to="/register" 
+        jk, register here.
+        <Link
+          as={RouterLink}
+          fontWeight="semibold"
+          textDecoration="underline"
+          _hover={{ textDecoration: 'none', color: 'teal.700' }}
+          to="/register"
           color="blue.500"
           ml={1}
         >

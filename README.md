@@ -47,11 +47,10 @@ A web-based application used to help schools manage their data. Assists students
 git clone https://github.com/riyel/DataCarte.git  
 cd DataCarte  
 cd frontend  
-npm install react react-dom react-router-dom axios @chakra-ui/react @emotion/react framer-motion react-icons  
+npm install 
 npm run build  
 cd ../backend  
-npm install express cors dotenv jsonwebtoken bcrypt mongoose helmet morgan cookie-parser  
-npm install --save-dev nodemon  
+npm install 
 ```  
 </pre>  
 

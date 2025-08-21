@@ -56,6 +56,7 @@ router.post('/login',
       const user = await User.findOne({ email });
       if (!user) return res.status(400).json({ message: 'Invalid credentials' });
       console.log(password, user.password);
+      
       const isMatch = ( password == user.password );
       console.log(isMatch);
       if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
@@ -63,14 +64,18 @@ router.post('/login',
       const token = await jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
       console.log(token, user);
 
-      res.json({
+      const responseData = {
         token,
         user: { id: user._id, name: user.name, email: user.email, role: user.role },
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Server error' });
-    }
+      };
+      
+      console.log(responseData); // Log the object, not the result of res.json
+      
+      res.json(responseData); // Send the response once
+          } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: 'Server error' });
+          }
   });
 
 module.exports = router;

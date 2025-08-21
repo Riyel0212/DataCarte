@@ -14,7 +14,7 @@ const auth = (req, res, next) => {
   } catch {
     return res.status(401).json({ message: 'Token is not valid' });
   }
-};
+}; 2
 
 const authorizeRoles = (...roles) => (req, res, next) => {
   if (!req.user) {
