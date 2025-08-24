@@ -11,7 +11,7 @@ import Students from './pages/Students';
 import Teachers from './pages/Teachers';
 import Parents from './pages/Parents';
 
-import AuthProvider from './context/AuthContext';
+import AuthProvider from './context/AuthProvider';
 import PrivateRoute from './components/PrivateRoute'; // Your auth guard component
 
 const App = () => {

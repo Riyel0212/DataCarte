@@ -1,13 +1,13 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Input, Text, Heading, VStack, Link } from '@chakra-ui/react';
 import { Toaster, toaster } from '../components/ui/toaster';
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
+import useAuth from '../context/AuthContext';
 
 const Login = () => {
   // Extract both `auth` and `setAuth` in case you want to log auth state or use it
-  const { setAuth } = useContext(AuthContext);
+  const { setAuth } = useAuth();
 
   // State for form inputs
   const [email, setEmail] = useState('');

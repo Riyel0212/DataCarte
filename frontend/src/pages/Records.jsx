@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Heading, Select, Spinner, Text, Table } from '@chakra-ui/react';
 import { Toaster, toaster } from '../components/ui/toaster';
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
+import useAuth from '../context/AuthContext';
 import RecordsForm from '../components/RecordsForm';
 
 const Records = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth } = useAuth();
   const isTeacher = auth?.user?.role === 'teacher';
 
   const [students, setStudents] = useState([]);
@@ -18,7 +18,8 @@ const Records = () => {
   const fetchStudents = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/students`,
+        // `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/students`,
+        '/api/students',
         { headers: { Authorization: `Bearer ${auth.token}` } }
       );
       setStudents(res.data);
@@ -38,7 +39,8 @@ const Records = () => {
     setError('');
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/records/${studentId}`,
+        // `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/records/${studentId}`,
+        `/api/records/${studentId}`,
         { headers: { Authorization: `Bearer ${auth.token}` } }
       );
       setRecord(res.data);
@@ -52,13 +54,13 @@ const Records = () => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchStudents();
-  }, []);
+  });
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchRecord();
-  }, [studentId]);
+  });
 
   return (
     <Box p={6}>

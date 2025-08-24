@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Box, Heading, Text } from '@chakra-ui/react';
-import { AuthContext } from '../context/AuthContext';
+import useAuth from '../context/AuthContext';
 
 const Dashboard = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth } = useAuth();
   const name = auth?.user?.name || 'User';
 
   return (

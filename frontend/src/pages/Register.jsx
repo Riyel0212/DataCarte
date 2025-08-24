@@ -1,89 +1,175 @@
-import React, { useState, useContext } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
-import { Box, Button, Input, Text, Heading, VStack, Link } from '@chakra-ui/react';
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Button,
+  Input, 
+  Text, 
+  Heading, 
+  VStack, 
+  Menu,
+  Portal, 
+} from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import { Toaster, toaster } from '../components/ui/toaster';
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
-  const { setAuth } = useContext(AuthContext);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+// RoleMenu component remains unchanged
+const RoleMenu = ({ value, onChange, error }) => {
+  const options = [
+    { value: 'student', label: 'Student' },
+    { value: 'teacher', label: 'Teacher' },
+    { value: 'parent', label: 'Parent' },
+  ];
 
-  const [errors, setErrors] = useState({
+  const selectedLabel =
+    options.find((opt) => opt.value === value)?.label || 'Select role';
+
+  return (
+    <Box>
+      <Text fontWeight="semibold" mb={1}>Role</Text>
+
+      <Box
+        mb={2}
+        p={2}
+        border="1px solid"
+        borderColor={error ? 'red.500' : 'gray.300'}   // Red border on error
+        borderRadius="md"
+        minHeight="32px"
+        fontWeight="medium"
+        color={value ? 'black' : (error ? 'red.500' : 'gray.500')}
+      >
+        {value ? selectedLabel : 'No role selected'}
+      </Box>
+
+      <Menu.Root>
+        <Menu.Trigger asChild>
+          <Button width="100%" textAlign="left" rightIcon={<ChevronDownIcon />}>
+            {selectedLabel}
+          </Button>
+        </Menu.Trigger>
+        <Portal>
+          <Menu.Positioner>
+            <Menu.Content>
+              {options.map((opt) => (
+                <Menu.Item
+                  key={opt.value}
+                  onClick={() => onChange(opt.value)}
+                  bg={opt.value === value ? 'teal.100' : 'transparent'}
+                >
+                  {opt.label}
+                </Menu.Item>
+              ))}
+            </Menu.Content>
+          </Menu.Positioner>
+        </Portal>
+      </Menu.Root>
+    </Box>
+  );
+};
+
+
+const Register = () => {
+  // Holds form input values
+  const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
+    role: '',
   });
-  const [generalError, setGeneralError] = useState('');
+
+  // Holds validation error messages per field
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: '',
+  });
+
+  // To track if form is submitting
   const [loading, setLoading] = useState(false);
 
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // useNavigate hook must be at the top level of the component
+  const navigate = useNavigate();
 
+  // Validates email
+  const validateEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  // Handles input changes and clears the error for that field
+  const handleChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  // Validate all form fields
   const validate = () => {
     const newErrors = {};
-    if (!email.trim()) newErrors.email = 'Email is required';
-    else if (!validateEmail(email)) newErrors.email = 'Invalid email address';
-    if (!password) newErrors.password = 'Password is required';
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    }
+
+    if (!formData.role) {
+      newErrors.role = 'Role selection is required';
+    }
+
     setErrors(newErrors);
+
+    // Successful if no errors
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleEmailChange = (val) => {
-    setEmail(val);
-    if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
-    if (generalError) setGeneralError('');
-  };
-
-  const handlePasswordChange = (val) => {
-    setPassword(val);
-    if (errors.password) setErrors((prev) => ({ ...prev, password: '' }));
-    if (generalError) setGeneralError('');
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  // Submit form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     if (!validate()) return;
 
     setLoading(true);
+
     try {
       const headersObj = {
         'ngrok-skip-browser-warning': 'true',
         'Content-Type': 'application/json',
       };
 
-      const res = await axios.post(
-        '/api/login',
-        { email, password },
-        { headers: headersObj }
-      );
+      await axios.post('/api/register', formData, { headers: headersObj });
 
-      if (!res.data || !res.data.token || !res.data.user) {
-        throw new Error('Invalid response from server');
-      }
-
-      setAuth({
-        token: res.data.token,
-        user: res.data.user,
-      });
-
+      // Show success toast with 3 seconds duration
       toaster.create({
-        title: 'Login successful',
+        title: 'Registration successful',
         status: 'success',
-        duration: 4000,
+        duration: 3000,
         isClosable: true,
       });
+
+      // Reset form and errors
+      setFormData({ name: '', email: '', password: '', role: '' });
+      setErrors({});
+
+      // Delay navigation so the toast can be seen
+      setTimeout(() => {
+        navigate('/Dashboard');
+      }, 3000); // Matches toast duration
+
     } catch (err) {
-      console.error(err);
-
-      setGeneralError(err.response?.data?.message || err.message || 'Login failed');
-
       toaster.create({
-        title: 'Login failed',
-        description: err.response?.data?.message || 'Invalid credentials',
+        title: 'Registration failed',
+        description: err.response?.data?.message || 'Registration error',
         status: 'error',
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
       });
     } finally {
@@ -92,85 +178,81 @@ const Login = () => {
   };
 
   return (
-    <Box maxW="md" mx="auto" mt={10} p={6} boxShadow="md" borderRadius="md" bg="black">
-      {generalError && (
-        <Text color="red.500" mb={4} fontWeight="semibold" textAlign="center">
-          {generalError}
-        </Text>
-      )}
-
+    <Box maxW="md" mx="auto" mt={10} p={6} boxShadow="md" borderRadius="md" bg="white">
       <Toaster />
-      <Heading mb={6} color="blue.700" textAlign="center">
-        Login
-      </Heading>
+      <Heading mb={6} color="blue.700" textAlign="center">Register</Heading>
       <form onSubmit={handleSubmit} noValidate>
         <VStack spacing={4} align="flex-start">
+
+          {/* Name Field */}
           <Box w="100%">
-            <Text htmlFor="email" fontWeight="semibold" mb={1} as="label">
-              Email
-            </Text>
+            <Text as="label" htmlFor="name" fontWeight="semibold" mb={1}>Name</Text>
+            <Input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              placeholder="Full name"
+              borderColor={errors.name ? 'red.500' : undefined}
+            />
+            {errors.name && (
+              <Text color="red.500" fontSize="sm" mt={1}>{errors.name}</Text>
+            )}
+          </Box>
+
+          {/* Email Field */}
+          <Box w="100%">
+            <Text as="label" htmlFor="email" fontWeight="semibold" mb={1}>Email</Text>
             <Input
               id="email"
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => handleEmailChange(e.target.value)}
+              value={formData.email}
+              onChange={(e) => handleChange(e.target.name, e.target.value)}
               placeholder="your-email@example.com"
               borderColor={errors.email ? 'red.500' : undefined}
             />
             {errors.email && (
-              <Text color="red.500" fontSize="sm" mt={1}>
-                {errors.email}
-              </Text>
+              <Text color="red.500" fontSize="sm" mt={1}>{errors.email}</Text>
             )}
           </Box>
 
+          {/* Password Field */}
           <Box w="100%">
-            <Text htmlFor="password" fontWeight="semibold" mb={1} as="label">
-              Password
-            </Text>
+            <Text as="label" htmlFor="password" fontWeight="semibold" mb={1}>Password</Text>
             <Input
               id="password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => handlePasswordChange(e.target.value)}
-              placeholder="********"
+              value={formData.password}
+              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              placeholder="Enter password"
               borderColor={errors.password ? 'red.500' : undefined}
             />
             {errors.password && (
-              <Text color="red.500" fontSize="sm" mt={1}>
-                {errors.password}
-              </Text>
+              <Text color="red.500" fontSize="sm" mt={1}>{errors.password}</Text>
+            )}
+          </Box>
+
+          {/* Role Field */}
+          <Box w="100%">
+            <RoleMenu
+              value={formData.role}
+              onChange={(val) => handleChange('role', val)}
+              error={!!errors.role}
+            />
+            {errors.role && (
+              <Text color="red.500" fontSize="sm" mt={1}>{errors.role}</Text>
             )}
           </Box>
 
           <Button type="submit" colorScheme="blue" width="full" isLoading={loading}>
-            Login
+            Register
           </Button>
         </VStack>
       </form>
-
-      <Text mt={4} fontSize="sm" color="gray.600" textAlign="center">
-        Forgot password? Contact admin.
-      </Text>
-      <Text mt={4} fontSize="sm" color="gray.600" textAlign="center">
-        Don't have an account yet? Then SYBAU.
-      </Text>
-      <Text fontSize="sm" color="gray.600" textAlign="center" mb={2}>
-        jk, register here.
-        <Link
-          as={RouterLink}
-          fontWeight="semibold"
-          textDecoration="underline"
-          _hover={{ textDecoration: 'none', color: 'teal.700' }}
-          to="/register"
-          color="blue.500"
-          ml={1}
-        >
-          Register
-        </Link>
-      </Text>
     </Box>
   );
 };
 
-export default Login;
+export default Register;
